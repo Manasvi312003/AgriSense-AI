@@ -1,0 +1,5 @@
+model,MAE,RMSE,R2
+Random Forest Regressor,1.3939,1.7699,0.8022
+Gradient Boosting,1.3071,1.66,0.826
+Linear Regression,1.3826,1.7509,0.8064
+Adaptive Yield (Proposed),1.3825,1.7507,0.8065
