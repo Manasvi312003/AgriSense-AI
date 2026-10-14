@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 # PostgreSQL connection
 DATABASE_URL = (
-    "postgresql+psycopg2://postgres:Qwerty%23%40123@localhost:5432/agrisense_db"
+    "postgresql+psycopg2://postgres:Sanjeev%40123%23@localhost:5432/agrisense_db"
 )
 
 

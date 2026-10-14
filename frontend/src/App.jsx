@@ -13,10 +13,9 @@ import {
 } from "recharts";
 
 function App() {
-  // =========================================================
-  // FARM INPUT DATA
-  // =========================================================
 
+  const [currentPage, setCurrentPage] = useState("home"); // "home" ya "dashboard"
+  const [mode, setMode] = useState("analyze");
   const [formData, setFormData] = useState({
     N: "",
     P: "",
@@ -26,6 +25,7 @@ function App() {
     ph: "",
     rainfall: "",
     area: "",
+    crop:"", // new field added
   });
 
   // =========================================================
@@ -91,60 +91,122 @@ function App() {
   // FARM ANALYSIS
   // =========================================================
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   setResult(null);
+
+  //   try {
+  //     const response = await fetch(
+  //       "http://127.0.0.1:8000/analyze",
+  //       {
+  //         method: "POST",
+
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+
+  //         body: JSON.stringify({
+  //           N: Number(formData.N),
+  //           P: Number(formData.P),
+  //           K: Number(formData.K),
+  //           temperature: Number(formData.temperature),
+  //           humidity: Number(formData.humidity),
+  //           ph: Number(formData.ph),
+  //           rainfall: Number(formData.rainfall),
+  //           area: Number(formData.area),
+  //         }),
+  //       }
+  //     );
+
+  //     const data = await response.json();
+
+  //     if (!response.ok) {
+  //       throw new Error(
+  //         data.detail || "Prediction failed"
+  //       );
+  //     }
+
+  //     // Show current analysis result
+  //     setResult(data);
+
+  //     // IMPORTANT:
+  //     // Refresh database history AFTER analysis is saved
+  //     await loadHistory();
+
+  //   } catch (error) {
+  //     console.error(
+  //       "AgriSense AI Error:",
+  //       error
+  //     );
+
+  //     alert(
+  //       "Unable to connect to AgriSense AI backend."
+  //     );
+
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setResult(null);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/analyze",
-        {
-          method: "POST",
+      let endpoint = "";
+      let payload = {};
 
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            N: Number(formData.N),
-            P: Number(formData.P),
-            K: Number(formData.K),
-            temperature: Number(formData.temperature),
-            humidity: Number(formData.humidity),
-            ph: Number(formData.ph),
-            rainfall: Number(formData.rainfall),
-            area: Number(formData.area),
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.detail || "Prediction failed"
-        );
+      // 1. DYNAMIC PAYLOAD & ENDPOINT
+      if (mode === "recommend") {
+        endpoint = "http://127.0.0.1:8000/recommend";
+        payload = {
+          N: Number(formData.N), P: Number(formData.P), K: Number(formData.K),
+          temperature: Number(formData.temperature), humidity: Number(formData.humidity),
+          ph: Number(formData.ph), rainfall: Number(formData.rainfall)
+        };
+      } else if (mode === "predict") {
+        endpoint = "http://127.0.0.1:8000/predict-yield";
+        payload = {
+          N: Number(formData.N), P: Number(formData.P), K: Number(formData.K),
+          temperature: Number(formData.temperature), humidity: Number(formData.humidity),
+          ph: Number(formData.ph), rainfall: Number(formData.rainfall),
+          area: Number(formData.area), crop: formData.crop.toLowerCase() // Crop string me
+        };
+      } else {
+        endpoint = "http://127.0.0.1:8000/analyze";
+        payload = {
+          N: Number(formData.N), P: Number(formData.P), K: Number(formData.K),
+          temperature: Number(formData.temperature), humidity: Number(formData.humidity),
+          ph: Number(formData.ph), rainfall: Number(formData.rainfall), area: Number(formData.area)
+        };
       }
 
-      // Show current analysis result
-      setResult(data);
+      // 2. API CALL
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      // IMPORTANT:
-      // Refresh database history AFTER analysis is saved
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Prediction failed");
+
+      // 3. RESULT WRAPPER (Taaki niche ka HTML break na ho)
+      if (mode === "recommend") {
+        setResult({ crop_recommendation: data }); 
+      } else if (mode === "predict") {
+        setResult({ yield_prediction: data });
+      } else {
+        setResult(data);
+      }
+
       await loadHistory();
 
     } catch (error) {
-      console.error(
-        "AgriSense AI Error:",
-        error
-      );
-
-      alert(
-        "Unable to connect to AgriSense AI backend."
-      );
-
+      console.error("AgriSense AI Error:", error);
+      alert("Unable to connect to AgriSense AI backend.");
     } finally {
       setLoading(false);
     }
@@ -185,15 +247,29 @@ function App() {
       ================================================= */}
 
       <header className="navbar">
-
-        <div className="logo">
+        <div 
+          className="logo" 
+          onClick={() => setCurrentPage("home")} 
+          style={{ cursor: "pointer" }}
+        >
           🌱 AgriSense AI
         </div>
 
-        <div className="nav-status">
-          NSAF • Adaptive Intelligence
+        {/* Naye Navigation Buttons */}
+        <div className="nav-links">
+          <button
+            className={`nav-btn ${currentPage === "home" ? "active-nav" : ""}`}
+            onClick={() => setCurrentPage("home")}
+          >
+            🏠 Home
+          </button>
+          <button
+            className={`nav-btn ${currentPage === "dashboard" ? "active-nav" : ""}`}
+            onClick={() => setCurrentPage("dashboard")}
+          >
+            📊 Dashboard
+          </button>
         </div>
-
       </header>
 
 
@@ -202,7 +278,8 @@ function App() {
         {/* =================================================
             HERO
         ================================================= */}
-
+        {currentPage === "home" ? (
+          <>
         <section className="hero">
 
           <p className="tag">
@@ -220,11 +297,6 @@ function App() {
           </p>
 
         </section>
-
-
-        {/* =================================================
-            DASHBOARD
-        ================================================= */}
 
         <section className="dashboard">
 
@@ -244,6 +316,35 @@ function App() {
 
 
             <form onSubmit={handleSubmit}>
+             
+              {/* MODE SELECTOR TABS */}
+              <div className="mode-selector">
+                
+                <button 
+                  type="button" 
+                  onClick={() => setMode("analyze")} 
+                  className={`mode-btn ${mode === "analyze" ? "active-mode" : ""}`}
+                >
+                  🌟 Complete Analysis
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={() => setMode("recommend")} 
+                  className={`mode-btn ${mode === "recommend" ? "active-mode" : ""}`}
+                >
+                  🌾 Only Recommend Crop
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={() => setMode("predict")} 
+                  className={`mode-btn ${mode === "predict" ? "active-mode" : ""}`}
+                >
+                  📈 Only Predict Yield
+                </button>
+
+              </div>
 
               <div className="grid">
 
@@ -296,15 +397,19 @@ function App() {
                   onChange={handleChange}
                 />
 
-                <Input
-                  label="Area (hectares)"
-                  name="area"
-                  value={formData.area}
-                  onChange={handleChange}
-                />
+                {/* Conditional Inputs based on Mode */}
+                {mode !== "recommend" && (
+                  <Input label="Area (hectares)" name="area" value={formData.area} onChange={handleChange} />
+                )}
+
+                {mode === "predict" && (
+                   <div className="input-group">
+                     <label>Crop Name</label>
+                     <input type="text" name="crop" value={formData.crop} onChange={handleChange} required placeholder="e.g. rice, maize" />
+                   </div>
+                )}
 
               </div>
-
 
               <button
                 type="submit"
@@ -395,39 +500,40 @@ function App() {
                     RECOMMENDED CROP
                 ================================================= */}
 
-                <div className="result-main">
-
-                  <p>
-                    RECOMMENDED CROP
-                  </p>
-
-                  <h1>
-                    🌾{" "}
-                    {result.crop_recommendation.recommended_crop}
-                  </h1>
-
-                </div>
+                {result.crop_recommendation && (
+                  <div className="result-main">
+                    <p>RECOMMENDED CROP</p>
+                    <h1>
+                      🌾 {result.crop_recommendation.recommended_crop}
+                    </h1>
+                  </div>
+                )}
 
 
                 {/* =================================================
                     YIELD
                 ================================================= */}
 
+                {result.yield_prediction && (
+                  <>
                 <div className="yield-box">
 
                   <span>
                     Predicted Yield
                   </span>
 
-                  <strong>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
+                    <strong>
                     {Number(
                       result.yield_prediction.predicted_yield
                     ).toFixed(3)}
                   </strong>
 
                   <small>
-                    {result.yield_prediction.yield_unit}
+                    {result.yield_prediction.yield_unit || "tons/ha"}
                   </small>
+                  </div>
+                  
 
                 </div>
 
@@ -435,7 +541,7 @@ function App() {
                 {/* =================================================
                     FARM AREA + TOTAL PRODUCTION
                 ================================================= */}
-
+                {result.yield_prediction.area && (
                 <div className="production-grid">
 
                   <div className="production-box">
@@ -445,16 +551,16 @@ function App() {
                     </span>
 
                     <strong>
-                      {result.yield_prediction.area}
+                      {result.yield_prediction?.area}
                     </strong>
 
-                    <small>
+                    <span>
                       {result.yield_prediction.area_unit}
-                    </small>
+                    </span>
 
                   </div>
 
-
+                  {result.yield_prediction.area && (
                   <div className="production-box">
 
                     <span>
@@ -467,19 +573,23 @@ function App() {
                       ).toFixed(3)}
                     </strong>
 
-                    <small>
-                      {result.yield_prediction.production_unit}
-                    </small>
+                    <span>
+                      {result.yield_prediction.production_unit || "tonnes"}
+                    </span>
 
                   </div>
+                  )}
 
                 </div>
-
+                )}
+                </>
+                )}
 
                 {/* =================================================
                     TOP PREDICTIONS
                 ================================================= */}
-
+                {result.crop_recommendation?.top_predictions && (
+                  <>
                 <h3 className="prediction-title">
                   Top Crop Predictions
                 </h3>
@@ -513,6 +623,8 @@ function App() {
                   )}
 
                 </div>
+                </>
+                )}
 
 
                 {/* =================================================
@@ -535,566 +647,82 @@ function App() {
 
         </section>
 
+        <section className="comparison-section">
 
+      <div className="comparison-header">
+        <p className="tag">MODEL EVALUATION</p>
 
-{/* =====================================================
-    MODEL COMPARISON
-===================================================== */}
-
-<section className="comparison-section">
-
-  <div className="comparison-header">
-    <p className="tag">MODEL EVALUATION</p>
-
-    <h2>
-      AgriSense AI vs Existing Models
-    </h2>
-
-    <p>
-      Performance comparison of the proposed NSAF and
-      Adaptive Yield models with conventional machine learning models.
-    </p>
-  </div>
-
-
-  {/* ================= CROP COMPARISON ================= */}
-
-  <div className="comparison-card">
-
-    <div className="comparison-title">
-      <div>
-        <h3>🌾 Crop Recommendation</h3>
-        <p>Classification performance</p>
-      </div>
-    </div>
-
-    <div className="table-wrapper">
-
-      <table className="comparison-table">
-
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>Accuracy</th>
-            <th>Precision</th>
-            <th>Recall</th>
-            <th>F1 Score</th>
-          </tr>
-        </thead>
-
-        <tbody>
-
-          <tr>
-            <td>Random Forest</td>
-            <td>99.32%</td>
-            <td>99.35%</td>
-            <td>99.32%</td>
-            <td>99.32%</td>
-          </tr>
-
-          <tr>
-            <td>SVM</td>
-            <td>98.86%</td>
-            <td>98.96%</td>
-            <td>98.86%</td>
-            <td>98.87%</td>
-          </tr>
-
-          <tr>
-            <td>KNN</td>
-            <td>97.95%</td>
-            <td>98.04%</td>
-            <td>97.95%</td>
-            <td>97.93%</td>
-          </tr>
-
-          <tr className="proposed-row">
-            <td>
-              <strong>NSAF (Proposed)</strong>
-            </td>
-            <td>91.59%</td>
-            <td>91.79%</td>
-            <td>91.59%</td>
-            <td>91.38%</td>
-          </tr>
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  </div>
-
-
-  {/* ================= YIELD COMPARISON ================= */}
-
-  <div className="comparison-card">
-
-    <div className="comparison-title">
-
-      <div>
-        <h3>📈 Yield Prediction</h3>
-        <p>Regression performance — lower MAE/RMSE is better, higher R² is better</p>
-      </div>
-
-    </div>
-
-
-    <div className="table-wrapper">
-
-      <table className="comparison-table">
-
-        <thead>
-
-          <tr>
-            <th>Model</th>
-            <th>MAE (t/ha)</th>
-            <th>RMSE (t/ha)</th>
-            <th>R²</th>
-          </tr>
-
-        </thead>
-
-
-        <tbody>
-
-          <tr>
-            <td>Random Forest Regressor</td>
-            <td>1.3939</td>
-            <td>1.7699</td>
-            <td>0.8022</td>
-          </tr>
-
-          <tr>
-            <td>Gradient Boosting</td>
-            <td>1.3071</td>
-            <td>1.6600</td>
-            <td>0.8260</td>
-          </tr>
-
-          <tr>
-            <td>Linear Regression</td>
-            <td>1.3826</td>
-            <td>1.7509</td>
-            <td>0.8064</td>
-          </tr>
-
-          <tr className="proposed-row">
-            <td>
-              <strong>Adaptive Yield (Proposed)</strong>
-            </td>
-            <td>1.3825</td>
-            <td>1.7507</td>
-            <td>0.8065</td>
-          </tr>
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  </div>
-  {/* ================= VISUAL BARS ================= */}
-
-  <div className="comparison-card">
-
-    <h3>📊 Performance Overview</h3>
-
-    <div className="metric-grid">
-
-      <div className="metric-box">
-
-        <h4>Crop Accuracy</h4>
-
-        <div className="metric-row">
-          <span>Random Forest</span>
-          <div className="bar">
-            <div style={{ width: "99.32%" }}></div>
-          </div>
-          <b>99.32%</b>
-        </div>
-
-        <div className="metric-row">
-          <span>SVM</span>
-          <div className="bar">
-            <div style={{ width: "98.86%" }}></div>
-          </div>
-          <b>98.86%</b>
-        </div>
-
-        <div className="metric-row">
-          <span>KNN</span>
-          <div className="bar">
-            <div style={{ width: "97.95%" }}></div>
-          </div>
-          <b>97.95%</b>
-        </div>
-
-        <div className="metric-row proposed-metric">
-          <span>NSAF</span>
-          <div className="bar">
-            <div style={{ width: "91.59%" }}></div>
-          </div>
-          <b>91.59%</b>
-        </div>
-
-      </div>
-
-
-      <div className="metric-box">
-
-        <h4>Yield R²</h4>
-
-        <div className="metric-row">
-          <span>Random Forest</span>
-          <div className="bar">
-            <div style={{ width: "80.22%" }}></div>
-          </div>
-          <b>0.8022</b>
-        </div>
-
-        <div className="metric-row">
-          <span>Gradient Boosting</span>
-          <div className="bar">
-            <div style={{ width: "82.60%" }}></div>
-          </div>
-          <b>0.8260</b>
-        </div>
-
-        <div className="metric-row">
-          <span>Linear Regression</span>
-          <div className="bar">
-            <div style={{ width: "80.64%" }}></div>
-          </div>
-          <b>0.8064</b>
-        </div>
-
-        <div className="metric-row proposed-metric">
-          <span>Adaptive Yield</span>
-          <div className="bar">
-            <div style={{ width: "80.65%" }}></div>
-          </div>
-          <b>0.8065</b>
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</section>       
-{ /* =========================================================
-DATA VISUALIZATION
-========================================================= */}
-
-<section className="visualization-section">
-
-  <div className="section-heading">
-    <p className="tag">DATA INSIGHTS</p>
-
-    <h2>
-      Farm Analysis Dashboard
-    </h2>
-
-    <p>
-      Historical predictions generated by AgriSense AI
-    </p>
-  </div>
-
-
-  {historyLoading ? (
-
-    <div className="visualization-loading">
-      Loading database insights...
-    </div>
-
-  ) : history.length === 0 ? (
-
-    <div className="visualization-empty">
-      No historical farm data available yet.
-    </div>
-
-  ) : (
-
-    <>
-
-      {/* SUMMARY CARDS */}
-
-      <div className="stats-grid">
-
-        <div className="stat-card">
-          <span>Total Analyses</span>
-          <strong>{history.length}</strong>
-        </div>
-
-        <div className="stat-card">
-          <span>Latest Crop</span>
-          <strong>
-            {history[0]?.recommended_crop || "—"}
-          </strong>
-        </div>
-
-        <div className="stat-card">
-          <span>Latest Yield</span>
-          <strong>
-            {history[0]?.predicted_yield ?? "—"} t/ha
-          </strong>
-        </div>
-
-        <div className="stat-card">
-          <span>Latest Area</span>
-          <strong>
-            {history[0]?.inputs?.area ?? "—"} ha
-          </strong>
-        </div>
-
-      </div>
-
-
-      {/* YIELD TREND */}
-
-      <div className="chart-card">
-
-        <h3>Predicted Yield Trend</h3>
+        <h2>
+          AgriSense AI vs Existing Models
+        </h2>
 
         <p>
-          Yield predictions across recent farm analyses
+          Performance comparison of the proposed NSAF and
+          Adaptive Yield models with conventional machine learning models.
         </p>
-
-        <ResponsiveContainer
-          width="100%"
-          height={350}
-        >
-
-          <LineChart
-            data={[...history].reverse().map(
-              (item, index) => ({
-                analysis: index + 1,
-                yield: item.predicted_yield,
-              })
-            )}
-          >
-
-            <CartesianGrid strokeDasharray="3 3" />
-
-            <XAxis
-              dataKey="analysis"
-              label={{
-                value: "Analysis",
-                position: "insideBottom",
-                offset: -5,
-              }}
-            />
-
-            <YAxis
-              label={{
-                value: "Yield (t/ha)",
-                angle: -90,
-                position: "insideLeft",
-              }}
-            />
-
-            <Tooltip />
-
-            <Line
-              type="monotone"
-              dataKey="yield"
-              stroke="#278642"
-              strokeWidth={3}
-              dot={{ r: 4 }}
-            />
-
-          </LineChart>
-
-        </ResponsiveContainer>
-
       </div>
 
 
-      {/* NPK CHART */}
+      {/* ================= CROP COMPARISON ================= */}
 
-      <div className="chart-card">
+      <div className="comparison-card">
 
-        <h3>Nutrient Analysis</h3>
-
-        <p>
-          Nitrogen, Phosphorus and Potassium used in recent analyses
-        </p>
-
-        <ResponsiveContainer
-          width="100%"
-          height={350}
-        >
-
-          <BarChart
-            data={[...history]
-              .slice(0, 10)
-              .reverse()
-              .map((item, index) => ({
-                analysis: index + 1,
-                N: item.inputs?.N || 0,
-                P: item.inputs?.P || 0,
-                K: item.inputs?.K || 0,
-              }))}
-          >
-
-            <CartesianGrid strokeDasharray="3 3" />
-
-            <XAxis dataKey="analysis" />
-
-            <YAxis />
-
-            <Tooltip />
-
-            <Bar
-              dataKey="N"
-              fill="#278642"
-            />
-
-            <Bar
-              dataKey="P"
-              fill="#e0a12b"
-            />
-
-            <Bar
-              dataKey="K"
-              fill="#4b83c4"
-            />
-
-          </BarChart>
-
-        </ResponsiveContainer>
-
-      </div>
-
-
-      {/* RAINFALL VS YIELD */}
-
-      <div className="chart-card">
-
-        <h3>Rainfall vs Predicted Yield</h3>
-
-        <p>
-          Relationship between rainfall conditions and predicted yield
-        </p>
-
-        <ResponsiveContainer
-          width="100%"
-          height={350}
-        >
-
-          <LineChart
-            data={[...history]
-              .reverse()
-              .map((item) => ({
-                rainfall: item.inputs?.rainfall || 0,
-                yield: item.predicted_yield || 0,
-              }))}
-          >
-
-            <CartesianGrid strokeDasharray="3 3" />
-
-            <XAxis
-              dataKey="rainfall"
-              label={{
-                value: "Rainfall (mm)",
-                position: "insideBottom",
-                offset: -5,
-              }}
-            />
-
-            <YAxis
-              label={{
-                value: "Yield (t/ha)",
-                angle: -90,
-                position: "insideLeft",
-              }}
-            />
-
-            <Tooltip />
-
-            <Line
-              type="monotone"
-              dataKey="yield"
-              stroke="#278642"
-              strokeWidth={3}
-              dot={{ r: 4 }}
-            />
-
-          </LineChart>
-
-        </ResponsiveContainer>
-
-      </div>
-
-
-      {/* HISTORY TABLE */}
-
-      <div className="history-card">
-
-        <h3>Recent Farm Analyses</h3>
+        <div className="comparison-title">
+          <div>
+            <h3>🌾 Crop Recommendation</h3>
+            <p>Classification performance</p>
+          </div>
+        </div>
 
         <div className="table-wrapper">
 
-          <table>
+          <table className="comparison-table">
 
             <thead>
-
               <tr>
-                <th>#</th>
-                <th>Crop</th>
-                <th>Yield</th>
-                <th>Area</th>
-                <th>Rainfall</th>
-                <th>Date</th>
+                <th>Model</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1 Score</th>
               </tr>
-
             </thead>
 
             <tbody>
 
-              {history.slice(0, 10).map(
-                (item, index) => (
+              <tr>
+                <td>Random Forest</td>
+                <td>99.32%</td>
+                <td>99.35%</td>
+                <td>99.32%</td>
+                <td>99.32%</td>
+              </tr>
 
-                  <tr key={item.farm_record_id}>
+              <tr>
+                <td>SVM</td>
+                <td>98.86%</td>
+                <td>98.96%</td>
+                <td>98.86%</td>
+                <td>98.87%</td>
+              </tr>
 
-                    <td>
-                      {index + 1}
-                    </td>
+              <tr>
+                <td>KNN</td>
+                <td>97.95%</td>
+                <td>98.04%</td>
+                <td>97.95%</td>
+                <td>97.93%</td>
+              </tr>
 
-                    <td>
-                      <strong>
-                        {item.recommended_crop}
-                      </strong>
-                    </td>
-
-                    <td>
-                      {item.predicted_yield} t/ha
-                    </td>
-
-                    <td>
-                      {item.inputs?.area} ha
-                    </td>
-
-                    <td>
-                      {item.inputs?.rainfall} mm
-                    </td>
-
-                    <td>
-                      {item.created_at
-                        ? new Date(
-                            item.created_at
-                          ).toLocaleDateString()
-                        : "—"}
-                    </td>
-
-                  </tr>
-
-                )
-              )}
+              <tr className="proposed-row">
+                <td>
+                  <strong>NSAF (Proposed)</strong>
+                </td>
+                <td>91.59%</td>
+                <td>91.79%</td>
+                <td>91.59%</td>
+                <td>91.38%</td>
+              </tr>
 
             </tbody>
 
@@ -1104,18 +732,491 @@ DATA VISUALIZATION
 
       </div>
 
-    </>
 
-  )}
+      {/* ================= YIELD COMPARISON ================= */}
 
-</section>
+      <div className="comparison-card">
+
+        <div className="comparison-title">
+
+          <div>
+            <h3>📈 Yield Prediction</h3>
+            <p>Regression performance — lower MAE/RMSE is better, higher R² is better</p>
+          </div>
+
+        </div>
 
 
-        {/* =========================================================
-            DATABASE / ANALYSIS HISTORY
-        ========================================================= */}
+        <div className="table-wrapper">
 
-        <section className="history-section">
+          <table className="comparison-table">
+
+            <thead>
+
+              <tr>
+                <th>Model</th>
+                <th>MAE (t/ha)</th>
+                <th>RMSE (t/ha)</th>
+                <th>R²</th>
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              <tr>
+                <td>Random Forest Regressor</td>
+                <td>1.3939</td>
+                <td>1.7699</td>
+                <td>0.8022</td>
+              </tr>
+
+              <tr>
+                <td>Gradient Boosting</td>
+                <td>1.3071</td>
+                <td>1.6600</td>
+                <td>0.8260</td>
+              </tr>
+
+              <tr>
+                <td>Linear Regression</td>
+                <td>1.3826</td>
+                <td>1.7509</td>
+                <td>0.8064</td>
+              </tr>
+
+              <tr className="proposed-row">
+                <td>
+                  <strong>Adaptive Yield (Proposed)</strong>
+                </td>
+                <td>1.3825</td>
+                <td>1.7507</td>
+                <td>0.8065</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+      {/* ================= VISUAL BARS ================= */}
+
+      <div className="comparison-card">
+
+        <h3>📊 Performance Overview</h3>
+
+        <div className="metric-grid">
+
+          <div className="metric-box">
+
+            <h4>Crop Accuracy</h4>
+
+            <div className="metric-row">
+              <span>Random Forest</span>
+              <div className="bar">
+                <div style={{ width: "99.32%" }}></div>
+              </div>
+              <b>99.32%</b>
+            </div>
+
+            <div className="metric-row">
+              <span>SVM</span>
+              <div className="bar">
+                <div style={{ width: "98.86%" }}></div>
+              </div>
+              <b>98.86%</b>
+            </div>
+
+            <div className="metric-row">
+              <span>KNN</span>
+              <div className="bar">
+                <div style={{ width: "97.95%" }}></div>
+              </div>
+              <b>97.95%</b>
+            </div>
+
+            <div className="metric-row proposed-metric">
+              <span>NSAF</span>
+              <div className="bar">
+                <div style={{ width: "91.59%" }}></div>
+              </div>
+              <b>91.59%</b>
+            </div>
+
+          </div>
+
+
+          <div className="metric-box">
+
+            <h4>Yield R²</h4>
+
+            <div className="metric-row">
+              <span>Random Forest</span>
+              <div className="bar">
+                <div style={{ width: "80.22%" }}></div>
+              </div>
+              <b>0.8022</b>
+            </div>
+
+            <div className="metric-row">
+              <span>Gradient Boosting</span>
+              <div className="bar">
+                <div style={{ width: "82.60%" }}></div>
+              </div>
+              <b>0.8260</b>
+            </div>
+
+            <div className="metric-row">
+              <span>Linear Regression</span>
+              <div className="bar">
+                <div style={{ width: "80.64%" }}></div>
+              </div>
+              <b>0.8064</b>
+            </div>
+
+            <div className="metric-row proposed-metric">
+              <span>Adaptive Yield</span>
+              <div className="bar">
+                <div style={{ width: "80.65%" }}></div>
+              </div>
+              <b>0.8065</b>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+        </section>  
+        </>
+        ):(
+        <>
+
+      <section className="visualization-section">
+
+        <div className="section-heading">
+          <p className="tag">DATA INSIGHTS</p>
+
+          <h2>
+            Farm Analysis Dashboard
+          </h2>
+
+          <p>
+            Historical predictions generated by AgriSense AI
+          </p>
+        </div>
+
+
+        {historyLoading ? (
+
+          <div className="visualization-loading">
+            Loading database insights...
+          </div>
+
+        ) : history.length === 0 ? (
+
+          <div className="visualization-empty">
+            No historical farm data available yet.
+          </div>
+
+        ) : (
+
+          <>
+
+            {/* SUMMARY CARDS */}
+
+            <div className="stats-grid">
+
+              <div className="stat-card">
+                <span>Total Analyses</span>
+                <strong>{history.length}</strong>
+              </div>
+
+              <div className="stat-card">
+                <span>Latest Crop</span>
+                <strong>
+                  {history[0]?.recommended_crop || "—"}
+                </strong>
+              </div>
+
+              <div className="stat-card">
+                <span>Latest Yield</span>
+                <strong>
+                  {history[0]?.predicted_yield ?? "—"} t/ha
+                </strong>
+              </div>
+
+              <div className="stat-card">
+                <span>Latest Area</span>
+                <strong>
+                  {history[0]?.inputs?.area ?? "—"} ha
+                </strong>
+              </div>
+
+            </div>
+
+
+            {/* YIELD TREND */}
+
+            <div className="chart-card">
+
+              <h3>Predicted Yield Trend</h3>
+
+              <p>
+                Yield predictions across recent farm analyses
+              </p>
+
+              <ResponsiveContainer
+                width="100%"
+                height={350}
+              >
+
+                <LineChart
+                  data={[...history].reverse().map(
+                    (item, index) => ({
+                      analysis: index + 1,
+                      yield: item.predicted_yield,
+                    })
+                  )}
+                >
+
+                  <CartesianGrid strokeDasharray="3 3" />
+
+                  <XAxis
+                    dataKey="analysis"
+                    label={{
+                      value: "Analysis",
+                      position: "insideBottom",
+                      offset: -5,
+                    }}
+                  />
+
+                  <YAxis
+                    label={{
+                      value: "Yield (t/ha)",
+                      angle: -90,
+                      position: "insideLeft",
+                    }}
+                  />
+
+                  <Tooltip />
+
+                  <Line
+                    type="monotone"
+                    dataKey="yield"
+                    stroke="#278642"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+
+                </LineChart>
+
+              </ResponsiveContainer>
+
+            </div>
+
+
+            {/* NPK CHART */}
+
+            <div className="chart-card">
+
+              <h3>Nutrient Analysis</h3>
+
+              <p>
+                Nitrogen, Phosphorus and Potassium used in recent analyses
+              </p>
+
+              <ResponsiveContainer
+                width="100%"
+                height={350}
+              >
+
+                <BarChart
+                  data={[...history]
+                    .slice(0, 10)
+                    .reverse()
+                    .map((item, index) => ({
+                      analysis: index + 1,
+                      N: item.inputs?.N || 0,
+                      P: item.inputs?.P || 0,
+                      K: item.inputs?.K || 0,
+                    }))}
+                >
+
+                  <CartesianGrid strokeDasharray="3 3" />
+
+                  <XAxis dataKey="analysis" />
+
+                  <YAxis />
+
+                  <Tooltip />
+
+                  <Bar
+                    dataKey="N"
+                    fill="#278642"
+                  />
+
+                  <Bar
+                    dataKey="P"
+                    fill="#e0a12b"
+                  />
+
+                  <Bar
+                    dataKey="K"
+                    fill="#4b83c4"
+                  />
+
+                </BarChart>
+
+              </ResponsiveContainer>
+
+            </div>
+
+
+            {/* RAINFALL VS YIELD */}
+
+            <div className="chart-card">
+
+              <h3>Rainfall vs Predicted Yield</h3>
+
+              <p>
+                Relationship between rainfall conditions and predicted yield
+              </p>
+
+              <ResponsiveContainer
+                width="100%"
+                height={350}
+              >
+
+                <LineChart
+                  data={[...history]
+                    .reverse()
+                    .map((item) => ({
+                      rainfall: item.inputs?.rainfall || 0,
+                      yield: item.predicted_yield || 0,
+                    }))}
+                >
+
+                  <CartesianGrid strokeDasharray="3 3" />
+
+                  <XAxis
+                    dataKey="rainfall"
+                    label={{
+                      value: "Rainfall (mm)",
+                      position: "insideBottom",
+                      offset: -5,
+                    }}
+                  />
+
+                  <YAxis
+                    label={{
+                      value: "Yield (t/ha)",
+                      angle: -90,
+                      position: "insideLeft",
+                    }}
+                  />
+
+                  <Tooltip />
+
+                  <Line
+                    type="monotone"
+                    dataKey="yield"
+                    stroke="#278642"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+
+                </LineChart>
+
+              </ResponsiveContainer>
+
+            </div>
+
+
+            {/* HISTORY TABLE */}
+
+            <div className="history-card">
+
+              <h3>Recent Farm Analyses</h3>
+
+              <div className="table-wrapper">
+
+                <table>
+
+                  <thead>
+
+                    <tr>
+                      <th>#</th>
+                      <th>Crop</th>
+                      <th>Yield</th>
+                      <th>Area</th>
+                      <th>Rainfall</th>
+                      <th>Date</th>
+                    </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                    {history.slice(0, 10).map(
+                      (item, index) => (
+
+                        <tr key={item.farm_record_id}>
+
+                          <td>
+                            {index + 1}
+                          </td>
+
+                          <td>
+                            <strong>
+                              {item.recommended_crop}
+                            </strong>
+                          </td>
+
+                          <td>
+                            {item.predicted_yield} t/ha
+                          </td>
+
+                          <td>
+                            {item.inputs?.area} ha
+                          </td>
+
+                          <td>
+                            {item.inputs?.rainfall} mm
+                          </td>
+
+                          <td>
+                            {item.created_at
+                              ? new Date(
+                                  item.created_at
+                                ).toLocaleDateString()
+                              : "—"}
+                          </td>
+
+                        </tr>
+
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            </div>
+
+          </>
+
+        )}
+
+      </section>
+
+      <section className="history-section">
 
           <div className="history-header">
 
@@ -1282,7 +1383,9 @@ DATA VISUALIZATION
 
           )}
 
-        </section>
+      </section>
+       </>
+        )}
 
       </main>
 
