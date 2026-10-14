@@ -64,6 +64,7 @@ class YieldInput(BaseModel):
     ph: float
     rainfall: float
     area: float
+    crop: str
 
 
 class FarmInput(BaseModel):
@@ -165,7 +166,9 @@ def analyze_farm(
         input_data
     )
 
-
+    # Recommended crop ko input_data me daal do taki yield model usko padh sake
+    input_data["crop"] = crop_result["recommended_crop"]
+    
     # =====================================================
     # 3. ADAPTIVE YIELD PREDICTION
     # =====================================================
