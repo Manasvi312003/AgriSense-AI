@@ -1,97 +1,114 @@
-import pandas as pd
+# import pandas as pd
+
+# def triangular_membership(x, left, center, right):
+#     if left > center or center > right:
+#         raise ValueError("Invalid fuzzy boundaries")
+
+#     # Handle a degenerate triangle
+#     if left == center == right:
+#         return 1.0 if x == center else 0.0
+
+#     # Peak of the membership function
+#     if x == center:
+#         return 1.0
+
+#     # Left shoulder: peak at the left boundary
+#     if left == center:
+#         if x < center:
+#             return 1.0
+#         return max(0.0, (right - x) / (right - center))
+
+#     # Right shoulder: peak at the right boundary
+#     if center == right:
+#         if x > center:
+#             return 1.0
+#         return max(0.0, (x - left) / (center - left))
+
+#     # Ordinary triangular membership
+#     if x < left or x > right:
+#         return 0.0
+
+#     if x < center:
+#         return (x - left) / (center - left)
+
+#     return (right - x) / (right - center)
 
 
-def triangular_membership(x, left, center, right):
-    if left > center or center > right:
-        raise ValueError("Invalid fuzzy boundaries")
+# # Load dataset
+# df = pd.read_csv("data/Crop_recommendation.csv")
 
-    if x <= left or x >= right:
-        return 0.0
-
-    if x == center:
-        return 1.0
-
-    if x < center:
-        return (x - left) / (center - left)
-
-    return (right - x) / (right - center)
+# features = [
+#     "N",
+#     "P",
+#     "K",
+#     "temperature",
+#     "humidity",
+#     "ph",
+#     "rainfall"
+# ]
 
 
-# Load dataset
-df = pd.read_csv("data/Crop_recommendation.csv")
+# fuzzy_rows = []
 
-features = [
-    "N",
-    "P",
-    "K",
-    "temperature",
-    "humidity",
-    "ph",
-    "rainfall"
-]
+# for _, row in df.iterrows():
 
+#     fuzzy_vector = []
 
-fuzzy_rows = []
+#     for feature in features:
 
-for _, row in df.iterrows():
+#         value = row[feature]
 
-    fuzzy_vector = []
+#         minimum = df[feature].min()
+#         q25 = df[feature].quantile(0.25)
+#         median = df[feature].median()
+#         q75 = df[feature].quantile(0.75)
+#         maximum = df[feature].max()
 
-    for feature in features:
+#         low = triangular_membership(
+#             value, minimum, minimum, median
+#         )
 
-        value = row[feature]
+#         medium = triangular_membership(
+#             value, q25, median, q75
+#         )
 
-        minimum = df[feature].min()
-        q25 = df[feature].quantile(0.25)
-        median = df[feature].median()
-        q75 = df[feature].quantile(0.75)
-        maximum = df[feature].max()
+#         high = triangular_membership(
+#             value, median, maximum, maximum
+#         )
 
-        low = triangular_membership(
-            value, minimum, minimum, median
-        )
+#         fuzzy_vector.extend([low, medium, high])
 
-        medium = triangular_membership(
-            value, q25, median, q75
-        )
-
-        high = triangular_membership(
-            value, median, maximum, maximum
-        )
-
-        fuzzy_vector.extend([low, medium, high])
-
-    fuzzy_rows.append(fuzzy_vector)
+#     fuzzy_rows.append(fuzzy_vector)
 
 
-fuzzy_df = pd.DataFrame(fuzzy_rows)
+# fuzzy_df = pd.DataFrame(fuzzy_rows)
 
-fuzzy_columns = []
+# fuzzy_columns = []
 
-for feature in features:
-    fuzzy_columns.extend([
-        f"{feature}_low",
-        f"{feature}_medium",
-        f"{feature}_high"
-    ])
+# for feature in features:
+#     fuzzy_columns.extend([
+#         f"{feature}_low",
+#         f"{feature}_medium",
+#         f"{feature}_high"
+#     ])
 
-fuzzy_df.columns = fuzzy_columns
+# fuzzy_df.columns = fuzzy_columns
 
-print("Original dataset shape:", df.shape)
-print("Fuzzy dataset shape:", fuzzy_df.shape)
-print("\nFirst fuzzy row:")
-print(fuzzy_df.iloc[0].values)
+# print("Original dataset shape:", df.shape)
+# print("Fuzzy dataset shape:", fuzzy_df.shape)
+# print("\nFirst fuzzy row:")
+# print(fuzzy_df.iloc[0].values)
 
-# Add crop labels
-fuzzy_df["label"] = df["label"].values
+# # Add crop labels
+# fuzzy_df["label"] = df["label"].values
 
-print("\nFinal fuzzy dataset shape:", fuzzy_df.shape)
+# print("\nFinal fuzzy dataset shape:", fuzzy_df.shape)
 
-print("\nFinal columns:")
-print(fuzzy_df.columns.tolist())
+# print("\nFinal columns:")
+# print(fuzzy_df.columns.tolist())
 
-output_path = "data/fuzzy_agriculture.csv"
+# output_path = "data/fuzzy_agriculture.csv"
 
-fuzzy_df.to_csv(output_path, index=False)
+# fuzzy_df.to_csv(output_path, index=False)
 
-print("\nSaved fuzzy dataset to:", output_path)
+# print("\nSaved fuzzy dataset to:", output_path)
