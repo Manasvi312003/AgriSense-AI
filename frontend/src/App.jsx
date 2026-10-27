@@ -192,7 +192,7 @@ function App() {
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Prediction failed");
-
+      console.log("AgriSense AI Response:", data);
       // 3. RESULT WRAPPER (Taaki niche ka HTML break na ho)
       if (mode === "recommend") {
         setResult({ crop_recommendation: data }); 
@@ -718,10 +718,10 @@ function App() {
                 <td>
                   <strong>NSAF (Proposed)</strong>
                 </td>
-                <td>91.59%</td>
-                <td>91.79%</td>
-                <td>91.59%</td>
-                <td>91.38%</td>
+                <td>96.36%</td>
+                <td>96.90%</td>
+                <td>96.36%</td>
+                <td>96.25%</td>
               </tr>
 
             </tbody>

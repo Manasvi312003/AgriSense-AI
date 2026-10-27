@@ -57,15 +57,29 @@ class NSAFCore:
 
 # Simple NSAF test
 
-x = np.random.rand(21)
+# x = np.random.rand(21)
 
-model = NSAFCore(
-    input_size=21,
-    learning_rate=0.01
-)
+# model = NSAFCore(
+#     input_size=21,
+#     learning_rate=0.01
+# )
 
-output = model.forward(x)
+# output = model.forward(x)
 
-print("Input shape:", x.shape)
-print("Output shape:", output.shape)
-print("First 5 output values:", output[:5])
+# print("Input shape:", x.shape)
+# print("Output shape:", output.shape)
+# print("First 5 output values:", output[:5])
+
+if __name__ == "__main__":
+    x = np.random.rand(21)
+
+    model = NSAFCore(
+        input_size=21,
+        learning_rate=0.01
+    )
+
+    output = model.forward(x)
+
+    print("Input shape:", x.shape)
+    print("Output shape:", output.shape)
+    print("First 5 output values:", output[:5])

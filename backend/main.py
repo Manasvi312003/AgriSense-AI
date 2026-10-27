@@ -10,7 +10,7 @@ from database.models import (
     CropRecommendation
 )
 
-from backend.nsaf_service import recommend_crop
+from backend.nsaf_interaction_service import predict_crop
 from backend.yield_service import predict_yield
 
 
@@ -106,7 +106,7 @@ def crop_recommendation(data: CropInput):
 
     input_data = data.model_dump()
 
-    result = recommend_crop(input_data)
+    result = predict_crop(input_data)
 
     return result
 
@@ -162,7 +162,7 @@ def analyze_farm(
     # 2. NSAF CROP RECOMMENDATION
     # =====================================================
 
-    crop_result = recommend_crop(
+    crop_result = predict_crop(
         input_data
     )
 

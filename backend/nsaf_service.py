@@ -22,20 +22,57 @@ context_strength = model_data["context_strength"]
 fuzzy_boundaries = model_data["fuzzy_boundaries"]
 
 
+# def triangular_membership(x, left, center, right):
+#     if x == center:
+#         return 1.0
+
+#     if x <= left:
+#         return 0.0 if left != center else 1.0
+
+#     if x >= right:
+#         return 0.0 if right != center else 1.0
+
+#     if x < center:
+#         return (x - left) / (center - left)
+
+#     return (right - x) / (right - center)
+
+
+
 def triangular_membership(x, left, center, right):
+    if left > center or center > right:
+        raise ValueError("Invalid fuzzy boundaries")
+
+    if left == center == right:
+        return 1.0 if x == center else 0.0
+
     if x == center:
         return 1.0
 
-    if x <= left:
-        return 0.0 if left != center else 1.0
+    # Left shoulder
+    if left == center:
+        if x < center:
+            return 1.0
+        if x >= right:
+            return 0.0
+        return (right - x) / (right - center)
 
-    if x >= right:
-        return 0.0 if right != center else 1.0
+    # Right shoulder
+    if center == right:
+        if x > center:
+            return 1.0
+        if x <= left:
+            return 0.0
+        return (x - left) / (center - left)
+
+    if x <= left or x >= right:
+        return 0.0
 
     if x < center:
         return (x - left) / (center - left)
 
     return (right - x) / (right - center)
+
 
 
 def create_fuzzy_vector(input_data):

@@ -47,7 +47,7 @@ TEST_SIZE = 0.20
 # =========================================================
 
 from backend.nsaf_service import recommend_crop
-from yield_core import AdaptiveYieldLearner
+from yield_model.yield_core import AdaptiveYieldLearner
 
 
 # =========================================================

@@ -1,69 +1,115 @@
-import pickle
-import pandas as pd
+# import pickle
+# import pandas as pd
 
-# Trained NSAF objects
-from train_nsaf import model, prototypes, classes
+# # Trained NSAF objects
+# from train_nsaf import model, prototypes, classes
 
-# Original dataset se fuzzy boundaries save karenge
-df = pd.read_csv("data/Crop_recommendation.csv")
+# # Original dataset se fuzzy boundaries save karenge
+# df = pd.read_csv("data/Crop_recommendation.csv")
 
-features = [
-    "N",
-    "P",
-    "K",
-    "temperature",
-    "humidity",
-    "ph",
-    "rainfall"
-]
+# features = [
+#     "N",
+#     "P",
+#     "K",
+#     "temperature",
+#     "humidity",
+#     "ph",
+#     "rainfall"
+# ]
 
-fuzzy_boundaries = {}
+# fuzzy_boundaries = {}
 
-for feature in features:
+# for feature in features:
 
-    fuzzy_boundaries[feature] = {
-        "minimum": float(df[feature].min()),
-        "q25": float(df[feature].quantile(0.25)),
-        "median": float(df[feature].median()),
-        "q75": float(df[feature].quantile(0.75)),
-        "maximum": float(df[feature].max())
-    }
-
-
-# Complete NSAF model
-nsaf_model = {
-
-    # Learned prototypes
-    "prototypes": prototypes,
-
-    # Crop names
-    "classes": classes,
-
-    # Learned NSAF interaction matrix
-    "W": model.W,
-
-    # Learned adaptive context strength
-    "context_strength": model.context_strength,
-
-    # Fuzzy membership boundaries
-    "fuzzy_boundaries": fuzzy_boundaries,
-
-    # Input features
-    "features": features
-}
+#     fuzzy_boundaries[feature] = {
+#         "minimum": float(df[feature].min()),
+#         "q25": float(df[feature].quantile(0.25)),
+#         "median": float(df[feature].median()),
+#         "q75": float(df[feature].quantile(0.75)),
+#         "maximum": float(df[feature].max())
+#     }
 
 
-# Save complete model
-with open("data/nsaf_crop_model.pkl", "wb") as f:
-    pickle.dump(nsaf_model, f)
+# # Complete NSAF model
+# nsaf_model = {
+
+#     # Learned prototypes
+#     "prototypes": prototypes,
+
+#     # Crop names
+#     "classes": classes,
+
+#     # Learned NSAF interaction matrix
+#     "W": model.W,
+
+#     # Learned adaptive context strength
+#     "context_strength": model.context_strength,
+
+#     # Fuzzy membership boundaries
+#     "fuzzy_boundaries": fuzzy_boundaries,
+
+#     # Input features
+#     "features": features
+# }
 
 
-print("\nComplete NSAF model saved successfully!")
+# # Save complete model
+# with open("data/nsaf_crop_model.pkl", "wb") as f:
+#     pickle.dump(nsaf_model, f)
 
-print("Prototypes:", prototypes.shape)
-print("W matrix:", model.W.shape)
-print("Context strength:", model.context_strength.shape)
-print("Classes:", len(classes))
 
-print("\nModel file:")
-print("data/nsaf_crop_model.pkl")
+# print("\nComplete NSAF model saved successfully!")
+
+# print("Prototypes:", prototypes.shape)
+# print("W matrix:", model.W.shape)
+# print("Context strength:", model.context_strength.shape)
+# print("Classes:", len(classes))
+
+# print("\nModel file:")
+# print("data/nsaf_crop_model.pkl")
+
+
+
+# import pickle
+# from pathlib import Path
+
+# from train_nsaf import train_model
+
+
+# # Project paths
+# ROOT_DIR = Path(__file__).resolve().parent.parent
+# MODEL_PATH = ROOT_DIR / "data" / "nsaf_crop_model.pkl"
+
+
+# def save_model():
+#     print("Training NSAF model and preparing artifacts...")
+
+#     # Train model and receive all required artifacts
+#     results = train_model()
+
+#     model = results["model"]
+
+#     model_data = {
+#         "prototypes": results["prototypes"],
+#         "classes": results["classes"],
+#         "W": model.W,
+#         "context_strength": model.context_strength,
+#         "fuzzy_boundaries": results["fuzzy_boundaries"],
+#         "features": results["features"],
+#     }
+
+#     # Save the trained model
+#     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+#     with open(MODEL_PATH, "wb") as file:
+#         pickle.dump(model_data, file)
+
+#     print("\nNSAF model saved successfully.")
+#     print(f"Model path: {MODEL_PATH}")
+#     print(f"Number of classes: {len(results['classes'])}")
+#     print(f"Number of features: {len(results['features'])}")
+#     print(f"Test accuracy: {results['test_accuracy']:.2%}")
+
+
+# if __name__ == "__main__":
+#     save_model()
